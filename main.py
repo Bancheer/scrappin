@@ -13,19 +13,28 @@ def scrape_page(url):
     
     quotes_container = soup.find_all('div', class_='quote')
     for quote_container in quotes_container:
-        quote_text = quote_container.find('span', class_='text').get_text()
-        tags = [tag.text for tag in quote_container.find_all('a', class_='tag')]
-        author = quote_container.find('small', class_='author').text
-        author_link = url + quote_container.find('a')['href']
-        if not any(a['fullname'] == author for a in authors_data):
-            author_info = scrape_author_info(author_link)
-            authors_data.append(author_info)
+        try:
+            quote_text = quote_container.find('span', class_='text').get_text()
+            tags = [tag.text for tag in quote_container.find_all('a', class_='tag')]
+            author = quote_container.find('small', class_='author').text
+            author_link = "http://quotes.toscrape.com" + quote_container.find('a')['href']
+            
+            if not any(a['fullname'] == author for a in authors_data):
+                try:
+                    author_info = scrape_author_info(author_link)
+                    authors_data.append(author_info)
+                except Exception as e:
+                    print(f"Failed to scrape author info for {author}: {str(e)}")
+                    continue
 
-        quotes_data.append({
-            "quote": quote_text,
-            "tags": tags,
-            "author": author
-        })
+            quotes_data.append({
+                "quote": quote_text,
+                "tags": tags,
+                "author": author
+            })
+        except Exception as e:
+            print(f"Error processing quote: {str(e)}")
+            continue
 
 def scrape_author_info(url):
     response = requests.get(url)
@@ -51,10 +60,10 @@ def scrape_author_info(url):
 while True:
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    scrape_page(url)
+    scrape_page(response.url)
     next_page = soup.find('li', class_='next')
     if next_page:
-        url = f"http://quotes.toscrape.com{next_page.find('a')['href']}"
+        url = "http://quotes.toscrape.com" + next_page.find('a')['href']
     else:
         break
 
